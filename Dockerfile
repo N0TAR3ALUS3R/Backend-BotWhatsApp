@@ -8,6 +8,8 @@ LABEL fly_launch_runtime="Node.js"
 WORKDIR /app
 
 ENV NODE_ENV="production"
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # --------- Etapa de construcción ---------
 FROM base AS build
@@ -17,56 +19,49 @@ RUN apt-get update -qq && \
     build-essential \
     node-gyp \
     pkg-config \
-    python-is-python3
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 COPY . .
 
 # --------- Etapa final para producción ---------
 FROM base
 
-# Instalamos las dependencias del sistema necesarias para Chromium (Puppeteer)
+# Instalamos Chromium y dependencias mínimas
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    ffmpeg \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libc6 \
-    libcairo2 \
-    libcups2 \
-    libdbus-1-3 \
-    libexpat1 \
-    libfontconfig1 \
-    libgbm1 \
-    libgcc1 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
+    chromium \
+    # Dependencias esenciales
     libnss3 \
-    libpango-1.0-0 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
     libxcomposite1 \
-    libxcursor1 \
     libxdamage1 \
-    libxext6 \
     libxfixes3 \
-    libxi6 \
     libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    lsb-release \
-    wget \
-    xdg-utils \
+    libgbm1 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    # Otras dependencias útiles
+    ffmpeg \
+    fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
+
+# Configuración de Chromium para Puppeteer
+RUN ln -s /usr/bin/chromium /usr/bin/chromium-browser
 
 COPY --from=build /app /app
 
+# Asegurar permisos adecuados
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]
