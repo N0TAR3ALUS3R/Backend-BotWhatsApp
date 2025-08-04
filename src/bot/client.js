@@ -7,7 +7,15 @@ let isReady = false;
 const client = new Client({
   puppeteer: {
     args: [
-      '--no-sandbox']
+      '--no-sandbox'
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--single-process',
+      '--no-zygote',
+      '--disable-gpu'
+    ],
+    headless: true,
+    trimeout: 60000
   }
 });
 
