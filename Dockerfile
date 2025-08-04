@@ -62,6 +62,6 @@ COPY --from=build /app /app
 RUN chown -R node:node /app
 USER node
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["npm", "start"]
